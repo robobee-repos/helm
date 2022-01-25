@@ -185,7 +185,7 @@ spec:
           containerPort: {{ .Values.nextcloud.containerPort | default "80" }}
           protocol: TCP
         {{- end }}
-        {{- if and .Values.livenessProbe.enabled (not .Values.nginx.enabled) }}
+        {{- if and .Values.livenessProbe.enabled (not .Values.nginx.enabled) (not .Values.fastcgi.enabled) }}
         livenessProbe:
           httpGet:
             path: /status.php
@@ -198,8 +198,17 @@ spec:
           timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
           successThreshold: {{ .Values.livenessProbe.successThreshold }}
           failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+        {{- else if and .Values.livenessProbe.enabled (not .Values.nginx.enabled) (.Values.fastcgi.enabled) }}
+        livenessProbe:
+          tcpSocket:
+            port: http
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
         {{- end }}
-        {{- if and .Values.readinessProbe.enabled (not .Values.nginx.enabled) }}
+        {{- if and .Values.readinessProbe.enabled (not .Values.nginx.enabled) (not .Values.fastcgi.enabled) }}
         readinessProbe:
           httpGet:
             path: /status.php
@@ -212,8 +221,17 @@ spec:
           timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
           successThreshold: {{ .Values.readinessProbe.successThreshold }}
           failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+        {{- else if and .Values.livenessProbe.enabled (not .Values.nginx.enabled) (.Values.fastcgi.enabled) }}
+        readinessProbe:
+          tcpSocket:
+            port: http
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
         {{- end }}
-        {{- if and .Values.startupProbe.enabled (not .Values.nginx.enabled) }}
+        {{- if and .Values.startupProbe.enabled (not .Values.nginx.enabled) (not .Values.fastcgi.enabled) }}
         startupProbe:
           httpGet:
             path: /status.php
