@@ -245,6 +245,15 @@ spec:
           successThreshold: {{ .Values.startupProbe.successThreshold }}
           failureThreshold: {{ .Values.startupProbe.failureThreshold }}
         {{- end }}
+        {{- if .Values.nextcloud.containerSecurityContext.enabled }}
+        securityContext:
+          {{- if .Values.nginx.enabled }}
+          # Will mount configuration files as www-data (id: 82) for nextcloud
+          runAsUser: 82
+          {{- else }}
+          runAsUser: 33
+          {{- end }}
+        {{- end }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
         volumeMounts:
@@ -334,7 +343,10 @@ spec:
           successThreshold: {{ .Values.readinessProbe.successThreshold }}
           failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
         {{- end }}
-
+        {{- if .Values.nextcloud.containerSecurityContext.enabled }}
+        securityContext:
+          runAsUser: 82
+        {{- end }}
         resources:
 {{ toYaml .Values.nginx.resources | indent 10 }}
         volumeMounts:
@@ -450,19 +462,19 @@ spec:
       # Will mount configuration files as www-data (id: 82) for nextcloud
       securityContext:
         fsGroup: 82
-        {{- if .Values.securityContext }}
-        {{- with .Values.securityContext }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        {{- if .Values.nextcloud.podSecurityContext.enabled }}
+        runAsUser: {{ default 82 .Values.nextcloud.podSecurityContext.runAsUser }}
+        fsGroup: {{ default 82 .Values.nextcloud.podSecurityContext.fsGroup }}
+        runAsNonRoot: {{ default "true" .Values.nextcloud.podSecurityContext.runAsNonRoot }}
         {{- end }}
       {{- else }}
       # Will mount configuration files as www-data (id: 33) for nextcloud
       securityContext:
         fsGroup: 33
-        {{- if .Values.securityContext }}
-        {{- with .Values.securityContext }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        {{- if .Values.nextcloud.podSecurityContext.enabled }}
+        runAsUser: {{ default 33 .Values.nextcloud.podSecurityContext.runAsUser }}
+        fsGroup: {{ default 33 .Values.nextcloud.podSecurityContext.fsGroup }}
+        runAsNonRoot: {{ default "true" .Values.nextcloud.podSecurityContext.runAsNonRoot }}
         {{- end }}
       {{- end }}
       {{- if .Values.rbac.enabled }}

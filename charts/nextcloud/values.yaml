@@ -170,12 +170,17 @@ nextcloud:
   #  - name: nfs
   #    mountPath: "/legacy_data"
 
-  # Extra secuurityContext parameters. For example you may need to define runAsNonRoot directive
-  # extraSecurityContext:
-  #   runAsUser: "33"
-  #   runAsGroup: "33"
-  #   runAsNonRoot: true
-  #   readOnlyRootFilesystem: true
+  ## @param nextcloud.podSecurityContext.enabled Enable securityContext on for Nextcloud deployment
+  ##
+  podSecurityContext:
+    enabled: true
+
+  ## Configure Container Security Context
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+  ## @param nextcloud.containerSecurityContext.enabled Enabled Nextcloud Image Renderer containers' Security Context
+  ##
+  containerSecurityContext:
+    enabled: true
 
 nginx:
   ## You need to set an fpm version of the image for nextcloud if you want to use nginx!
@@ -412,7 +417,6 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-
 
 ## Prometheus Exporter / Metrics
 ##
