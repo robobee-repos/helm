@@ -471,9 +471,8 @@ spec:
       {{- if .Values.nextcloud.extraVolumes }}
 {{ toYaml .Values.nextcloud.extraVolumes | indent 6 }}
       {{- end }}
-      {{- if .Values.nextcloud.podSecurityContext }}
-      securityContext:
-        {{ .Values.nextcloud.podSecurityContext | toYaml | nindent 8 }}
+      {{- if .Values.nextcloud.podSecurityContext.enabled }}
+      securityContext: {{- omit .Values.nextcloud.podSecurityContext "enabled" | toYaml | nindent 8 }}
       {{- end }}
       {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Values.rbac.serviceaccount.name }}
