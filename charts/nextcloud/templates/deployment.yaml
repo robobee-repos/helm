@@ -179,12 +179,15 @@ spec:
         {{- if .Values.nextcloud.extraEnv }}
 {{ toYaml .Values.nextcloud.extraEnv | indent 8 }}
         {{- end }}
-        {{- if not .Values.nginx.enabled }}
         ports:
+          {{- if .Values.fastcgi.enabled }}
+        - name: fastcgi
+          containerPort: 9000
+          {{- else }}
         - name: http
           containerPort: {{ .Values.nextcloud.containerPort | default "80" }}
+          {{- end }}
           protocol: TCP
-        {{- end }}
         {{- if and .Values.livenessProbe.enabled (not .Values.nginx.enabled) (not .Values.fastcgi.enabled) }}
         livenessProbe:
           httpGet:
@@ -246,13 +249,7 @@ spec:
           failureThreshold: {{ .Values.startupProbe.failureThreshold }}
         {{- end }}
         {{- if .Values.nextcloud.containerSecurityContext.enabled }}
-        securityContext:
-          {{- if .Values.nginx.enabled }}
-          # Will mount configuration files as www-data (id: 82) for nextcloud
-          runAsUser: 82
-          {{- else }}
-          runAsUser: 33
-          {{- end }}
+        securityContext: {{- omit .Values.nextcloud.containerSecurityContext "enabled" | toYaml | nindent 10 }}
         {{- end }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
@@ -301,7 +298,13 @@ spec:
         {{- $nginxEnabled := .Values.nginx.enabled -}}
         {{- range $key, $value := .Values.nextcloud.phpConfigs }}
         - name: nextcloud-phpconfig
-          mountPath: {{ $nginxEnabled | ternary (printf "/usr/local/etc/php-fpm.d/%s" $key | quote) (printf "/usr/local/etc/php/conf.d/%s" $key | quote) }}
+          {{- if $.Values.nginx.enabled }}
+          mountPath: {{ printf "/usr/local/etc/php-fpm.d/%s" $key | quote }}
+          {{- else if $.Values.fastcgi.enabled }}
+          mountPath: {{ printf "/usr/local/etc/php-fpm.d/%s" $key | quote }}
+          {{- else }}
+          mountPath: {{ printf "/usr/local/etc/php/conf.d/%s" $key | quote }}
+          {{- end }}
           subPath: {{ $key }}
         {{- end }}
         {{- if .Values.nextcloud.extraVolumeMounts }}
@@ -344,8 +347,7 @@ spec:
           failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
         {{- end }}
         {{- if .Values.nextcloud.containerSecurityContext.enabled }}
-        securityContext:
-          runAsUser: 82
+        securityContext: {{- omit .Values.nextcloud.containerSecurityContext "enabled" | toYaml | nindent 10 }}
         {{- end }}
         resources:
 {{ toYaml .Values.nginx.resources | indent 10 }}
@@ -377,9 +379,20 @@ spec:
         - name: nextcloud-main
           mountPath: /var/www/html/themes
           subPath: {{ ternary "themes" (printf "%s/%s" .Values.nextcloud.persistence.subPath "themes") (empty .Values.nextcloud.persistence.subPath) }}
+          {{- if .Values.nginx.config.default }}
         - name: nextcloud-nginx-config
-          mountPath: /etc/nginx/nginx.conf
+          mountPath: /opt/bitnami/nginx/conf/server_blocks/nextcloud_upstream.conf
+          subPath: nextcloud_upstream.conf
+        - name: nextcloud-nginx-config
+          mountPath: /opt/bitnami/nginx/conf/bitnami/nextcloud.conf
+          subPath: nextcloud.conf
+          {{- else }}
+          {{ if .Values.nginx.config.custom }}
+        - name: nextcloud-nginx-config
+          mountPath: /opt/bitnami/nginx/conf/nginx.conf
           subPath: nginx.conf
+          {{- end }}
+          {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -458,24 +471,9 @@ spec:
       {{- if .Values.nextcloud.extraVolumes }}
 {{ toYaml .Values.nextcloud.extraVolumes | indent 6 }}
       {{- end }}
-      {{- if .Values.nginx.enabled }}
-      # Will mount configuration files as www-data (id: 82) for nextcloud
+      {{- if .Values.nextcloud.podSecurityContext }}
       securityContext:
-        fsGroup: 82
-        {{- if .Values.nextcloud.podSecurityContext.enabled }}
-        runAsUser: {{ default 82 .Values.nextcloud.podSecurityContext.runAsUser }}
-        fsGroup: {{ default 82 .Values.nextcloud.podSecurityContext.fsGroup }}
-        runAsNonRoot: {{ default "true" .Values.nextcloud.podSecurityContext.runAsNonRoot }}
-        {{- end }}
-      {{- else }}
-      # Will mount configuration files as www-data (id: 33) for nextcloud
-      securityContext:
-        fsGroup: 33
-        {{- if .Values.nextcloud.podSecurityContext.enabled }}
-        runAsUser: {{ default 33 .Values.nextcloud.podSecurityContext.runAsUser }}
-        fsGroup: {{ default 33 .Values.nextcloud.podSecurityContext.fsGroup }}
-        runAsNonRoot: {{ default "true" .Values.nextcloud.podSecurityContext.runAsNonRoot }}
-        {{- end }}
+        {{ .Values.nextcloud.podSecurityContext | toYaml | nindent 8 }}
       {{- end }}
       {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Values.rbac.serviceaccount.name }}

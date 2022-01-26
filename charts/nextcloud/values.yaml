@@ -79,7 +79,7 @@ nextcloud:
     # smtpPasswordKey: smtp_password
   update: 0
   # If web server is not binding default port, you can define it
-  # containerPort: 8080
+  containerPort: 8080
   datadir: /var/www/html/data
   persistence:
     subPath:
@@ -174,25 +174,33 @@ nextcloud:
   ##
   podSecurityContext:
     enabled: true
-
+    fsGroup: 33
+    runAsUser: 33
+    fsGroup: 33
+    runAsNonRoot: true
+                        
   ## Configure Container Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
   ## @param nextcloud.containerSecurityContext.enabled Enabled Nextcloud Image Renderer containers' Security Context
   ##
   containerSecurityContext:
     enabled: true
+    runAsUser: 33
 
 nginx:
   ## You need to set an fpm version of the image for nextcloud if you want to use nginx!
   enabled: false
+  sidecar: false
   image:
-    repository: nginx
-    tag: alpine
+    repository: bitnami/nginx
+    tag: 1.19.10
     pullPolicy: IfNotPresent
 
   config:
     # This generates the default nginx config as per the nextcloud documentation
     default: true
+    # Sets client_max_body_size in the default nginx config
+    maxUploadSize: 10G
     # custom: |-
     #     worker_processes  1;..
 
