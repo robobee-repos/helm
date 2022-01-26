@@ -176,7 +176,6 @@ nextcloud:
     enabled: true
     fsGroup: 33
     runAsUser: 33
-    fsGroup: 33
     runAsNonRoot: true
                         
   ## Configure Container Security Context
@@ -205,6 +204,10 @@ nginx:
     #     worker_processes  1;..
 
   resources: {}
+
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
 
 fastcgi:
   enabled: false
