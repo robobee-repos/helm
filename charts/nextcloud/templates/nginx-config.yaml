@@ -18,7 +18,7 @@ data:
   nextcloud.conf: |-
     # include in /opt/bitnami/nginx/conf/bitnami/
     # set max upload size
-    client_max_body_size {{ .Values.nginx.maxUploadSize }};
+    client_max_body_size {{ .Values.nginx.config.maxUploadSize }};
     fastcgi_buffers 64 4K;
 
     # Enable gzip but do not remove ETag headers
