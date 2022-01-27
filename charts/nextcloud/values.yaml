@@ -200,6 +200,8 @@ nginx:
     default: true
     # Sets client_max_body_size in the default nginx config
     maxUploadSize: 10G
+    # Sets fastcgi_param HTTPS on
+    fastcgiHttps: true
     # custom: |-
     #     worker_processes  1;..
 
