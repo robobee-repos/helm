@@ -7,10 +7,3 @@ nextcloud:
       redis.session.locking_enabled = 1
       redis.session.lock_retries = -1
       redis.session.lock_wait_time = 10000
-
-nginx:
-  enabled: true
-  sidecar: true
-
-fastcgi:
-  enabled: true
